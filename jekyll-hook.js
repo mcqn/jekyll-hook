@@ -50,11 +50,12 @@ app.post('/hooks/jekyll/*', function(req, res) {
         // Parse webhook data for internal variables
         data.repo = data.repository.name;
         data.branch = data.ref.replace('refs/heads/', '');
-        data.owner = data.repository.owner.name;
+        data.git_http_url = data.repository.git_http_url;
+        data.git_ssh_url = data.repository.git_ssh_url;
 
         // End early if not permitted account
-        if (config.accounts.indexOf(data.owner) === -1) {
-            console.log(data.owner + ' is not an authorized account.');
+        if (config.accounts.indexOf(data.user_name) === -1) {
+            console.log(data.user_name + ' is not an authorized account.');
             if (typeof cb === 'function') cb();
             return;
         }
@@ -69,17 +70,17 @@ app.post('/hooks/jekyll/*', function(req, res) {
         // Process webhook data into params for scripts
         /* repo   */ params.push(data.repo);
         /* branch */ params.push(data.branch);
-        /* owner  */ params.push(data.owner);
+        /* owner  */ params.push(data.user_name);
 
         /* giturl */
         if (config.public_repo) {
-            params.push('https://' + config.gh_server + '/' + data.owner + '/' + data.repo + '.git');
+            params.push(data.git_http_url);
         } else {
-            params.push('git@' + config.gh_server + ':' + data.owner + '/' + data.repo + '.git');
+            params.push(data.git_ssh_url);
         }
 
-        /* source */ params.push(config.temp + '/' + data.owner + '/' + data.repo + '/' + data.branch + '/' + 'code');
-        /* build  */ params.push(config.temp + '/' + data.owner + '/' + data.repo + '/' + data.branch + '/' + 'site');
+        /* source */ params.push(config.temp + '/' + data.repo + '/' + data.branch + '/' + 'code');
+        /* build  */ params.push(config.temp + '/' + data.repo + '/' + data.branch + '/' + 'site');
 
         // Script by branch.
         var build_script = null;
@@ -111,8 +112,8 @@ app.post('/hooks/jekyll/*', function(req, res) {
         // Run build script
         run(build_script, params, function(err) {
             if (err) {
-                console.log('Failed to build: ' + data.owner + '/' + data.repo);
-                send('Your website at ' + data.owner + '/' + data.repo + ' failed to build.', 'Error building site', data);
+                console.log('Failed to build: ' + data.repo);
+                send('Your website at ' + data.repo + ' failed to build.', 'Error building site', data);
 
                 if (typeof cb === 'function') cb();
                 return;
@@ -121,16 +122,16 @@ app.post('/hooks/jekyll/*', function(req, res) {
             // Run publish script
             run(publish_script, params, function(err) {
                 if (err) {
-                    console.log('Failed to publish: ' + data.owner + '/' + data.repo);
-                    send('Your website at ' + data.owner + '/' + data.repo + ' failed to publish.', 'Error publishing site', data);
+                    console.log('Failed to publish: ' + data.repo);
+                    send('Your website at ' + data.repo + ' failed to publish.', 'Error publishing site', data);
 
                     if (typeof cb === 'function') cb();
                     return;
                 }
 
                 // Done running scripts
-                console.log('Successfully rendered: ' + data.owner + '/' + data.repo);
-                send('Your website at ' + data.owner + '/' + data.repo + ' was successfully published.', 'Successfully published site', data);
+                console.log('Successfully rendered: ' + data.repo);
+                send('Your website at ' + data.repo + ' was successfully published.', 'Successfully published site', data);
 
                 if (typeof cb === 'function') cb();
                 return;
