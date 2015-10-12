@@ -18,5 +18,13 @@
     },
     "accounts": [
         "developmentseed"
-    ]
+    ],
+    "whitelist": {
+        "enabled": false,
+        "ips": [
+            "131.103.20.160/27",
+            "165.254.145.0/26",
+            "104.192.143.0/24"
+        ]
+    }
 }

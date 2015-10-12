@@ -3,38 +3,25 @@
 var config  = require('./config.json');
 var fs      = require('fs');
 var express = require('express');
-var app     = express();
 var queue   = require('queue-async');
 var tasks   = queue(1);
 var spawn   = require('child_process').spawn;
 var email   = require('emailjs/email');
 var mailer  = email.server.connect(config.email);
+var ipfilter = require('express-ipfilter');
 var crypto  = require('crypto');
+var app     = express();
 
-app.use(express.bodyParser({
-    verify: function(req,res,buffer){
-        if(!req.headers['x-hub-signature']){
-            return;
-        }
+app.use(express.urlencoded());
+app.use(express.json());
 
-        if(!config.secret || config.secret==""){
-            console.log("Recieved a X-Hub-Signature header, but cannot validate as no secret is configured");
-            return;
-        }
-
-        var hmac         = crypto.createHmac('sha1', config.secret);
-        var recieved_sig = req.headers['x-hub-signature'].split('=')[1];
-        var computed_sig = hmac.update(buffer).digest('hex');
-
-        if(recieved_sig != computed_sig){
-            console.warn('Recieved an invalid HMAC: calculated:' + computed_sig + ' != recieved:' + recieved_sig);
-            var err = new Error('Invalid Signature');
-            err.status = 403;
-            throw err;
-        }
-    }
-
-}));
+if (config.whitelist.enabled) {
+  app.use(ipfilter(config.whitelist.ips, {
+    mode: 'allow',
+    cidr: true,
+    ranges: true
+  }));
+}
 
 // Receive webhook post
 app.post('/hooks/jekyll/*', function(req, res) {

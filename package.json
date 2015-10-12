@@ -20,7 +20,8 @@
     "dependencies": {
         "express": "3.x",
         "emailjs": "0.3.4",
-        "queue-async": "1.0.x"
+        "queue-async": "1.0.x",
+        "express-ipfilter": "0.0.20"
     },
     "private": true
 }
