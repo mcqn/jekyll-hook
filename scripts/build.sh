@@ -25,5 +25,5 @@ cd -
 
 # Run jekyll
 cd $source
-jekyll build -s $source -d $build
+jekyll build -s "$source/src" -d $build
 cd -
